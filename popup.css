@@ -360,16 +360,21 @@ body.light-mode #themeIcon line {
 
 .sidebar-footer {
   margin-top: auto;
-  height: 38px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 4px;
-  padding-left: 16px;
+  padding: 0 10px 0 16px;
   font-size: 10px;
   color: var(--t2); /* Brighter base text */
   opacity: 0.9;
   border-top: 1px solid var(--divider);
+}
+
+/* Theme toggle relocated into the sidebar footer — pin to the right edge */
+.sidebar-toggle {
+  margin-left: auto;
 }
 
 .sidebar-footer a {
@@ -389,7 +394,8 @@ body.light-mode #themeIcon line {
   background: var(--main-bg);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   min-width: 0;
 }
 
@@ -451,11 +457,16 @@ body.light-mode #themeIcon line {
 /* ── Content tabs ────────────────────────────────────────────────────────── */
 .content-tabs {
   display: flex;
+  align-items: center;
   padding: 0 16px;
   border-bottom: 1px solid var(--divider);
   flex-shrink: 0;
   gap: 16px;
   width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--main-bg);
 }
 
 .content-tab {
@@ -501,8 +512,6 @@ body.light-mode #themeIcon line {
 
 /* ── List container ──────────────────────────────────────────────────────── */
 .list-container {
-  flex: 1;
-  overflow-y: auto;
   padding: 4px 0;
 }
 
@@ -693,6 +702,301 @@ body.light-mode #themeIcon line {
   white-space: nowrap;
   flex-shrink: 0;
   padding-left: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TREND CHART  — compact daily bars
+   ═══════════════════════════════════════════════════════════════════════════ */
+.trend-card {
+  margin: 0 16px 8px;
+  padding: 10px 12px 8px;
+  background: var(--sidebar-bg);
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.trend-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.trend-title {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--t2);
+}
+
+.trend-total {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--t1);
+}
+
+.trend-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 3px;
+  height: 44px;
+}
+
+.trend-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.trend-bar {
+  width: 100%;
+  max-width: 16px;
+  min-height: 2px;
+  background: var(--card-bg2);
+  border-radius: 3px;
+  transition: height var(--dur) var(--ease), background var(--dur);
+}
+
+.trend-col.is-today .trend-bar {
+  background: var(--a);
+}
+
+.trend-col.has-data .trend-bar {
+  background: var(--a-line);
+}
+
+.trend-col.is-today.has-data .trend-bar {
+  background: var(--a);
+}
+
+.trend-lbl {
+  font-size: 7.5px;
+  font-weight: 600;
+  color: var(--t3);
+  white-space: nowrap;
+}
+
+.trend-col.is-today .trend-lbl {
+  color: var(--a);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INSIGHT CARDS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.insight-row {
+  display: flex;
+  gap: 6px;
+  margin: 0 16px 10px;
+  flex-shrink: 0;
+}
+
+.insight-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 6px;
+  background: var(--sidebar-bg);
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  text-align: center;
+  align-items: center;
+}
+
+.insight-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--t1);
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.insight-lbl {
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--t2);
+  opacity: 0.85;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TAB ACTION + SEARCH
+   ═══════════════════════════════════════════════════════════════════════════ */
+.tab-action-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--t2);
+  cursor: pointer;
+  transition: color var(--dur), background var(--dur);
+}
+
+.tab-action-btn:hover {
+  color: var(--t1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-action-btn.active {
+  color: var(--a);
+  background: var(--a-soft);
+}
+
+/* When a tab-action button is present, the theme toggle no longer needs auto-margin */
+.content-tabs .tab-action-btn + .header-toggle {
+  margin-left: 4px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 16px 2px;
+  padding: 7px 10px;
+  background: var(--sidebar-bg);
+  border: 1px solid var(--bd);
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+
+.search-bar-icon {
+  color: var(--t3);
+  flex-shrink: 0;
+}
+
+.search-bar input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--t1);
+  font-size: 11.5px;
+  font-family: inherit;
+}
+
+.search-bar input::placeholder {
+  color: var(--t3);
+}
+
+.search-clear {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--t3);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.search-clear:hover {
+  color: var(--t1);
+}
+
+.search-bar.has-text .search-clear {
+  display: flex;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CHANNEL DRILL-DOWN
+   ═══════════════════════════════════════════════════════════════════════════ */
+.drill-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 16px 2px;
+  padding: 8px 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.drill-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--t2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color var(--dur), background var(--dur);
+}
+
+.drill-back:hover {
+  color: var(--t1);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.drill-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--t1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drill-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+/* Make channel rows look clickable */
+.channel-item {
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EXPORT BUTTONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.export-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-ghost {
+  flex: 1;
+  padding: 8px;
+  background: var(--card-bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r-sm);
+  color: var(--t1);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--dur), background var(--dur);
+}
+
+.btn-ghost:hover {
+  border-color: var(--a-line);
+  background: var(--a-soft);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

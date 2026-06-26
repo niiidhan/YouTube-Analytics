@@ -7,9 +7,14 @@ Focusflow is a high-end Chrome extension that tracks exactly how you spend your 
 ## ✨ Features
 *   **Live Metrics**: Instant tracking of watch time per video and channel.
 *   **Actionable Dashboard**: Breakdown stats for Today, Last 7 Days, and Monthly trends.
+*   **Trend Chart**: A daily watch-time bar chart (last 7 / 30 days) so you can spot patterns at a glance.
+*   **Insight Cards**: Daily average, peak watching hour, and longest single session.
+*   **Channel Drill-Down**: Click any channel to see exactly which videos you watched there.
+*   **Search**: Instantly filter your channels and videos.
+*   **Data Export**: One-click export of all sessions to CSV or JSON.
 *   **Privacy First**: All data is stored locally in your browser. No third-party tracking.
 *   **Google Sheets Sync**: (Coming Soon) Securely archive your data to your private Google Drive.
-*   **Professional UI**: Tightly designed sidebar-based navigation with a sleek dark-navy aesthetic.
+*   **Professional UI**: Tightly designed sidebar-based navigation with a sleek dark-navy aesthetic and light mode.
 
 ## 🛠️ Installation (Developer Mode)
 Since this is an analytics suite currently in development, you can load it manually in Chrome:

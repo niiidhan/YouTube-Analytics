@@ -92,63 +92,7 @@
 
       <div class="sidebar-footer">
         © <a href="https://www.linkedin.com/in/nidhan-p" target="_blank">Nid</a>
-      </div>
-    </aside>
-
-    <!-- ══ MAIN CONTENT ═══════════════════════════════════════════════════ -->
-    <div class="main">
-
-      <!-- Stats bar -->
-      <div class="stats-bar">
-        <div class="stat-block">
-          <svg class="stat-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-          <div class="stat-meta">
-            <span class="stat-val" id="heroTime">0s</span>
-            <span class="stat-lbl">Watch time</span>
-          </div>
-        </div>
-
-        <div class="stat-block">
-          <div class="stat-meta">
-            <span class="stat-val" id="heroChannels">0</span>
-            <span class="stat-lbl">Channels</span>
-          </div>
-        </div>
-
-        <div class="stat-block">
-          <div class="stat-meta">
-            <span class="stat-val" id="heroVideos">0</span>
-            <span class="stat-lbl">Videos</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Content tabs -->
-      <div class="content-tabs">
-        <button class="content-tab active" data-tab="channels">
-          <svg class="tab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-          Channels
-        </button>
-        <button class="content-tab" data-tab="videos">
-          <svg class="tab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-            <line x1="8" y1="21" x2="16" y2="21" />
-            <line x1="12" y1="17" x2="12" y2="21" />
-          </svg>
-          Videos
-        </button>
-        <button class="theme-toggle-btn-only header-toggle" id="nightModeBtn" title="Toggle Night Mode">
+        <button class="theme-toggle-btn-only sidebar-toggle" id="nightModeBtn" title="Toggle Night Mode">
           <div class="theme-switch-v2">
             <div class="switch-track-icons">
               <svg class="sun-icon-bg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -186,6 +130,124 @@
             </div>
           </div>
         </button>
+      </div>
+    </aside>
+
+    <!-- ══ MAIN CONTENT ═══════════════════════════════════════════════════ -->
+    <div class="main">
+
+      <!-- Stats bar -->
+      <div class="stats-bar">
+        <div class="stat-block">
+          <svg class="stat-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <div class="stat-meta">
+            <span class="stat-val" id="heroTime">0s</span>
+            <span class="stat-lbl">Watch time</span>
+          </div>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-meta">
+            <span class="stat-val" id="heroChannels">0</span>
+            <span class="stat-lbl">Channels</span>
+          </div>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-meta">
+            <span class="stat-val" id="heroVideos">0</span>
+            <span class="stat-lbl">Videos</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trend chart -->
+      <div class="trend-card" id="trendCard">
+        <div class="trend-head">
+          <span class="trend-title" id="trendTitle">Last 7 days</span>
+          <span class="trend-total" id="trendTotal"></span>
+        </div>
+        <div class="trend-bars" id="trendBars"></div>
+      </div>
+
+      <!-- Insight cards -->
+      <div class="insight-row" id="insightRow">
+        <div class="insight-card">
+          <span class="insight-val" id="insAvg">0s</span>
+          <span class="insight-lbl">Daily avg</span>
+        </div>
+        <div class="insight-card">
+          <span class="insight-val" id="insPeak">—</span>
+          <span class="insight-lbl">Peak hour</span>
+        </div>
+        <div class="insight-card">
+          <span class="insight-val" id="insLongest">0s</span>
+          <span class="insight-lbl">Longest</span>
+        </div>
+      </div>
+
+      <!-- Content tabs -->
+      <div class="content-tabs">
+        <button class="content-tab active" data-tab="channels">
+          <svg class="tab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          Channels
+        </button>
+        <button class="content-tab" data-tab="videos">
+          <svg class="tab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+          </svg>
+          Videos
+        </button>
+        <button class="tab-action-btn" id="searchToggle" title="Search" aria-label="Search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Search bar (toggled) -->
+      <div class="search-bar" id="searchBar" hidden>
+        <svg class="search-bar-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search channels & videos…" autocomplete="off" />
+        <button class="search-clear" id="searchClear" aria-label="Clear">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Channel drill-down header -->
+      <div class="drill-head" id="drillHead" hidden>
+        <button class="drill-back" id="drillBack" aria-label="Back">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+        </button>
+        <span class="drill-name" id="drillName"></span>
+        <span class="drill-time" id="drillTime"></span>
       </div>
 
       <!-- List -->
@@ -238,6 +300,17 @@
             autocomplete="off" disabled />
           <button class="btn-primary" id="connectSheetsBtn" disabled>Connect Google Sheets</button>
           <p class="hint">Copy the ID from <code>…/d/<strong>ID</strong>/edit</code></p>
+        </div>
+
+        <div class="settings-sep"></div>
+
+        <div class="settings-section">
+          <p class="section-title">Export</p>
+          <div class="export-row">
+            <button class="btn-ghost" id="exportCsvBtn">Export CSV</button>
+            <button class="btn-ghost" id="exportJsonBtn">Export JSON</button>
+          </div>
+          <p class="hint">Download all tracked sessions to a file.</p>
         </div>
 
         <div class="settings-sep"></div>
