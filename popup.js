@@ -241,6 +241,7 @@ function exitDrill() {
   drillChannel = null;
   document.getElementById('drillHead').hidden = true;
   render();
+  animateList();
 }
 
 // ─── Video list ─────────────────────────────────────────────────────────────
@@ -368,6 +369,17 @@ function escHtml(str) {
   return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// Replay the list's entrance animation. Called only on user navigation
+// (tab / period / drill) — NOT on the silent 5s auto-refresh, so the list
+// doesn't flash every few seconds.
+function animateList() {
+  const el = document.getElementById('listContainer');
+  if (!el) return;
+  el.classList.remove('anim-in');
+  void el.offsetWidth; // force reflow so the animation restarts
+  el.classList.add('anim-in');
+}
+
 function switchContent(tab) {
   currentTab = tab;
   drillChannel = null; // leaving a tab cancels any channel drill-down
@@ -386,6 +398,7 @@ function switchContent(tab) {
   channelListEl.hidden = (tab !== 'channels');
   emptyEl.hidden = true;
 
+  animateList();
   loadAndRender();
 }
 
@@ -398,6 +411,7 @@ document.querySelectorAll('.period-btn[data-period]').forEach(btn => {
     // Only remove active from other period buttons
     document.querySelectorAll('.period-btn[data-period]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    animateList();
     loadAndRender();
   });
 });
@@ -413,6 +427,7 @@ document.getElementById('channelList').addEventListener('click', (e) => {
   if (!li || !li.dataset.channel) return;
   drillChannel = li.dataset.channel;
   render();
+  animateList();
   document.querySelector('.main').scrollTop = 0;
 });
 
