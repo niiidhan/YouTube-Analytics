@@ -51,6 +51,10 @@ function showToast(msg, duration = 2500) {
 
 let currentPeriod = 'today';
 let currentTab = 'channels';
+let allSessions = [];      // every session_* entry, unfiltered
+let filteredSessions = []; // sessions within the current period
+let searchQuery = '';      // lowercased live search text
+let drillChannel = null;   // channel name being drilled into, or null
 
 // ─── Data loading ───────────────────────────────────────────────────────────
 
@@ -81,77 +85,181 @@ function loadAndRender() {
           }
           sessions.push(val);
         }
-        render(sessions);
+        allSessions = sessions;
+        render();
       });
     });
   });
 }
 
-function render(sessions) {
-  const dateSet = dateRangeSet(currentPeriod);
-  const filtered = currentPeriod === 'all'
-    ? sessions
-    : sessions.filter(s => dateSet.has(s.date));
+// Aggregate raw sessions into per-video rows (sum time, keep most recent meta)
+function aggregateVideos(sessions) {
+  const videoMap = {};
+  for (const s of sessions) {
+    if (!videoMap[s.videoId]) {
+      videoMap[s.videoId] = { ...s };
+    } else {
+      videoMap[s.videoId].totalSecs += s.totalSecs || 0;
+      if (new Date(s.endTime) > new Date(videoMap[s.videoId].endTime)) {
+        videoMap[s.videoId].endTime = s.endTime;
+        videoMap[s.videoId].title = s.title;
+        videoMap[s.videoId].channel = s.channel;
+      }
+    }
+  }
+  return Object.values(videoMap).sort((a, b) => new Date(b.endTime) - new Date(a.endTime));
+}
 
-  // ── Aggregates
-  const totalSecs = filtered.reduce((a, s) => a + (s.totalSecs || 0), 0);
-  const uniqueVideos = new Set(filtered.map(s => s.videoId)).size;
+// Aggregate raw sessions into per-channel rows (sum time, count videos)
+function aggregateChannels(sessions) {
   const channelMap = {};
-  for (const s of filtered) {
+  for (const s of sessions) {
     const ch = s.channel || 'Unknown';
     if (!channelMap[ch]) channelMap[ch] = { name: ch, secs: 0, count: 0, avatar: null };
     channelMap[ch].secs += s.totalSecs || 0;
     channelMap[ch].count += 1;
-    // Prefer a real avatar URL over null
-    if (s.channelAvatar && !channelMap[ch].avatar) {
-      channelMap[ch].avatar = s.channelAvatar;
-    }
+    if (s.channelAvatar && !channelMap[ch].avatar) channelMap[ch].avatar = s.channelAvatar;
   }
-  const channelList = Object.values(channelMap).sort((a, b) => b.secs - a.secs);
+  return Object.values(channelMap).sort((a, b) => b.secs - a.secs);
+}
+
+function render() {
+  const dateSet = dateRangeSet(currentPeriod);
+  filteredSessions = currentPeriod === 'all'
+    ? allSessions
+    : allSessions.filter(s => dateSet.has(s.date));
+
+  const totalSecs = filteredSessions.reduce((a, s) => a + (s.totalSecs || 0), 0);
+  const uniqueVideos = new Set(filteredSessions.map(s => s.videoId)).size;
+  const channelList = aggregateChannels(filteredSessions);
 
   // ── Hero ring  (r=50, circumference = 2π×50 ≈ 314)
   const maxGoalSecs = 3600;
   const pct = Math.min(totalSecs / maxGoalSecs, 1);
   const circumference = 314;
-  const offset = circumference - pct * circumference;
   document.getElementById('heroTime').textContent = formatTime(totalSecs);
   document.getElementById('heroVideos').textContent = uniqueVideos;
   document.getElementById('heroChannels').textContent = channelList.length;
-  document.getElementById('ringProgress').style.strokeDashoffset = offset;
+  document.getElementById('ringProgress').style.strokeDashoffset = circumference - pct * circumference;
 
-  // ── Aggregate per-video (sum across sessions)
-  const videoMap = {};
-  for (const s of filtered) {
-    if (!videoMap[s.videoId]) {
-      videoMap[s.videoId] = { ...s };
-    } else {
-      videoMap[s.videoId].totalSecs += s.totalSecs || 0;
-      // Keep the most recent endTime
-      if (new Date(s.endTime) > new Date(videoMap[s.videoId].endTime)) {
-        videoMap[s.videoId].endTime = s.endTime;
-        videoMap[s.videoId].title = s.title; // update title/channel if changed
-        videoMap[s.videoId].channel = s.channel;
-      }
-    }
-  }
-  // Videos: Most recent first
-  const videoList = Object.values(videoMap).sort((a, b) => new Date(b.endTime) - new Date(a.endTime));
+  renderTrend();
+  renderInsights(totalSecs);
 
-  // ── Render lists
-  if (currentTab === 'videos') {
-    renderVideoList(videoList);
+  // ── Render the active view
+  if (drillChannel) {
+    renderDrill();
+  } else if (currentTab === 'videos') {
+    renderVideoList(aggregateVideos(filteredSessions));
   } else {
     renderChannelList(channelList);
   }
 }
 
+// ─── Trend chart ─────────────────────────────────────────────────────────────
+
+function renderTrend() {
+  const days = (currentPeriod === 'today' || currentPeriod === 'week') ? 7 : 30;
+
+  const byDate = {};
+  for (const s of allSessions) byDate[s.date] = (byDate[s.date] || 0) + (s.totalSecs || 0);
+
+  const cols = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const dateStr = dateWithOffset(i);
+    cols.push({ date: dateStr, secs: byDate[dateStr] || 0, isToday: i === 0 });
+  }
+
+  const maxSecs = Math.max(1, ...cols.map(c => c.secs));
+  const total = cols.reduce((a, c) => a + c.secs, 0);
+
+  document.getElementById('trendTitle').textContent = `Last ${days} days`;
+  document.getElementById('trendTotal').textContent = total > 0 ? formatTime(total) : '';
+
+  const barsEl = document.getElementById('trendBars');
+  barsEl.innerHTML = cols.map(c => {
+    const h = Math.max(2, Math.round((c.secs / maxSecs) * 44));
+    const lbl = days <= 7
+      ? new Date(c.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'narrow' })
+      : '';
+    const cls = `trend-col${c.isToday ? ' is-today' : ''}${c.secs > 0 ? ' has-data' : ''}`;
+    const tip = `${c.date} · ${formatTime(c.secs)}`;
+    return `<div class="${cls}" title="${tip}">
+              <div class="trend-bar" style="height:${h}px"></div>
+              ${lbl ? `<span class="trend-lbl">${lbl}</span>` : ''}
+            </div>`;
+  }).join('');
+}
+
+// ─── Insight cards ───────────────────────────────────────────────────────────
+
+function renderInsights(totalSecs) {
+  const activeDays = new Set(filteredSessions.map(s => s.date)).size || 1;
+  const avg = totalSecs / activeDays;
+
+  const longest = filteredSessions.reduce((m, s) => Math.max(m, s.totalSecs || 0), 0);
+
+  // Peak hour — weight each hour-of-day by seconds watched
+  const hourBuckets = new Array(24).fill(0);
+  for (const s of filteredSessions) {
+    const t = s.endTime || s.startTime;
+    if (!t) continue;
+    const h = new Date(t).getHours();
+    if (!isNaN(h)) hourBuckets[h] += s.totalSecs || 0;
+  }
+  let peakHour = -1, peakVal = 0;
+  hourBuckets.forEach((v, h) => { if (v > peakVal) { peakVal = v; peakHour = h; } });
+
+  document.getElementById('insAvg').textContent = formatTime(Math.round(avg));
+  document.getElementById('insLongest').textContent = formatTime(longest);
+  document.getElementById('insPeak').textContent = peakHour < 0 ? '—' : formatHour(peakHour);
+}
+
+function formatHour(h) {
+  const period = h < 12 ? 'AM' : 'PM';
+  const hr = h % 12 === 0 ? 12 : h % 12;
+  return `${hr} ${period}`;
+}
+
+// ─── Channel drill-down ──────────────────────────────────────────────────────
+
+function renderDrill() {
+  const drillHead = document.getElementById('drillHead');
+  const sessions = filteredSessions.filter(s => (s.channel || 'Unknown') === drillChannel);
+  const secs = sessions.reduce((a, s) => a + (s.totalSecs || 0), 0);
+
+  drillHead.hidden = false;
+  document.getElementById('drillName').textContent = drillChannel;
+  document.getElementById('drillName').title = drillChannel;
+  document.getElementById('drillTime').textContent = formatTime(secs);
+
+  // Hide the channel list, show videos for this channel
+  document.getElementById('channelList').hidden = true;
+  renderVideoList(aggregateVideos(sessions), true);
+}
+
+function exitDrill() {
+  drillChannel = null;
+  document.getElementById('drillHead').hidden = true;
+  render();
+  animateList();
+}
+
 // ─── Video list ─────────────────────────────────────────────────────────────
 
-function renderVideoList(videos) {
+function renderVideoList(videos, isDrill = false) {
   const emptyEl = document.getElementById('emptyState');
   const listEl = document.getElementById('videoList');
 
-  if (currentTab !== 'videos') return;
+  if (currentTab !== 'videos' && !isDrill) return;
+
+  if (searchQuery) {
+    videos = videos.filter(v =>
+      (v.title || '').toLowerCase().includes(searchQuery) ||
+      (v.channel || '').toLowerCase().includes(searchQuery)
+    );
+  }
+
+  document.getElementById('channelList').hidden = true;
 
   if (videos.length === 0) {
     emptyEl.hidden = false;
@@ -208,7 +316,12 @@ function renderChannelList(channels) {
 
   if (currentTab !== 'channels') return;
 
+  document.getElementById('drillHead').hidden = true;
   videoEl.hidden = true;
+
+  if (searchQuery) {
+    channels = channels.filter(c => (c.name || '').toLowerCase().includes(searchQuery));
+  }
 
   if (channels.length === 0) {
     emptyEl.hidden = false;
@@ -225,6 +338,8 @@ function renderChannelList(channels) {
     const color = avatarColor(c.name || '');
     const li = document.createElement('li');
     li.className = 'channel-item';
+    li.dataset.channel = c.name;
+    li.title = `View ${c.name}'s videos`;
 
     // Build avatar: real image when available, letter circle as fallback
     const avatarHtml = c.avatar
@@ -254,8 +369,21 @@ function escHtml(str) {
   return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// Replay the list's entrance animation. Called only on user navigation
+// (tab / period / drill) — NOT on the silent 5s auto-refresh, so the list
+// doesn't flash every few seconds.
+function animateList() {
+  const el = document.getElementById('listContainer');
+  if (!el) return;
+  el.classList.remove('anim-in');
+  void el.offsetWidth; // force reflow so the animation restarts
+  el.classList.add('anim-in');
+}
+
 function switchContent(tab) {
   currentTab = tab;
+  drillChannel = null; // leaving a tab cancels any channel drill-down
+  document.getElementById('drillHead').hidden = true;
   document.querySelectorAll('.content-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tab);
   });
@@ -270,6 +398,7 @@ function switchContent(tab) {
   channelListEl.hidden = (tab !== 'channels');
   emptyEl.hidden = true;
 
+  animateList();
   loadAndRender();
 }
 
@@ -282,6 +411,7 @@ document.querySelectorAll('.period-btn[data-period]').forEach(btn => {
     // Only remove active from other period buttons
     document.querySelectorAll('.period-btn[data-period]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    animateList();
     loadAndRender();
   });
 });
@@ -290,6 +420,93 @@ document.querySelectorAll('.period-btn[data-period]').forEach(btn => {
 document.querySelectorAll('.content-tab').forEach(btn => {
   btn.addEventListener('click', () => switchContent(btn.dataset.tab));
 });
+
+// Channel drill-down (delegated) — click a channel row to see its videos
+document.getElementById('channelList').addEventListener('click', (e) => {
+  const li = e.target.closest('.channel-item');
+  if (!li || !li.dataset.channel) return;
+  drillChannel = li.dataset.channel;
+  render();
+  animateList();
+  document.querySelector('.main').scrollTop = 0;
+});
+
+// Drill back button
+document.getElementById('drillBack').addEventListener('click', exitDrill);
+
+// ─── Search ───────────────────────────────────────────────────────────────────
+
+const searchBar = document.getElementById('searchBar');
+const searchInput = document.getElementById('searchInput');
+
+document.getElementById('searchToggle').addEventListener('click', () => {
+  const willShow = searchBar.hidden;
+  searchBar.hidden = !willShow;
+  document.getElementById('searchToggle').classList.toggle('active', willShow);
+  if (willShow) {
+    searchInput.focus();
+  } else {
+    searchInput.value = '';
+    searchQuery = '';
+    searchBar.classList.remove('has-text');
+    render();
+  }
+});
+
+searchInput.addEventListener('input', () => {
+  searchQuery = searchInput.value.trim().toLowerCase();
+  searchBar.classList.toggle('has-text', searchInput.value.length > 0);
+  render();
+});
+
+document.getElementById('searchClear').addEventListener('click', () => {
+  searchInput.value = '';
+  searchQuery = '';
+  searchBar.classList.remove('has-text');
+  searchInput.focus();
+  render();
+});
+
+// ─── Export ───────────────────────────────────────────────────────────────────
+
+function triggerDownload(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function csvCell(val) {
+  const s = String(val ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportData(format) {
+  // Always export the full dataset (all sessions), most recent first
+  const rows = [...allSessions].sort((a, b) => new Date(b.endTime) - new Date(a.endTime));
+  if (rows.length === 0) { showToast('No data to export'); return; }
+
+  const stamp = dateWithOffset(0);
+  if (format === 'json') {
+    triggerDownload(JSON.stringify(rows, null, 2), `focusflow-${stamp}.json`, 'application/json');
+  } else {
+    const header = ['Date', 'Channel', 'Video Title', 'Time Watched (s)', 'Last Watched'];
+    const lines = [header.map(csvCell).join(',')];
+    for (const r of rows) {
+      lines.push([r.date, r.channel, r.title, Math.round(r.totalSecs || 0), r.endTime].map(csvCell).join(','));
+    }
+    triggerDownload(lines.join('\n'), `focusflow-${stamp}.csv`, 'text/csv');
+  }
+  showToast(`✓ Exported ${rows.length} sessions`);
+}
+
+document.getElementById('exportCsvBtn').addEventListener('click', () => exportData('csv'));
+document.getElementById('exportJsonBtn').addEventListener('click', () => exportData('json'));
 
 // Settings open / close
 document.getElementById('settingsBtn').addEventListener('click', openSettings);
