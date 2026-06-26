@@ -1,32 +1,95 @@
-# 🚀 Focusflow — YouTube Analytics
-**A premium YouTube watch-time monitor built for concentration and data-driven productivity.**
+# ⏱️ TubeTime — YouTube Analytics
 
-Focusflow is a high-end Chrome extension that tracks exactly how you spend your time on YouTube. It provides a visual, actionable dashboard to monitor your daily, weekly, and monthly watch history with zero distraction.
+**Know exactly how much time YouTube takes from you.**
 
-
-## ✨ Features
-*   **Live Metrics**: Instant tracking of watch time per video and channel.
-*   **Actionable Dashboard**: Breakdown stats for Today, Last 7 Days, and Monthly trends.
-*   **Trend Chart**: A daily watch-time bar chart (last 7 / 30 days) so you can spot patterns at a glance.
-*   **Insight Cards**: Daily average, peak watching hour, and longest single session.
-*   **Channel Drill-Down**: Click any channel to see exactly which videos you watched there.
-*   **Search**: Instantly filter your channels and videos.
-*   **Data Export**: One-click export of all sessions to CSV or JSON.
-*   **Privacy First**: All data is stored locally in your browser. No third-party tracking.
-*   **Google Sheets Sync**: (Coming Soon) Securely archive your data to your private Google Drive.
-*   **Professional UI**: Tightly designed sidebar-based navigation with a sleek dark-navy aesthetic and light mode.
-
-## 🛠️ Installation (Developer Mode)
-Since this is an analytics suite currently in development, you can load it manually in Chrome:
-
-1.  **Clone or Download** this repository.
-2.  Open Chrome and navigate to `chrome://extensions/`.
-3.  Turn on **"Developer mode"** (top right toggle).
-4.  Click **"Load unpacked"** and select the folder where you cloned the project.
-5.  **Pin** Focusflow for quick access!
-
-## 👩‍💻 Developed By
-Created by **[Nid](https://www.linkedin.com/in/nidhan-p)**. Focusflow was born out of a desire for a more precise, less cluttered way to manage digital consumption habits.
+TubeTime is a lightweight Chrome extension that measures your *real* YouTube watch time — per video and per channel — and turns it into a clean, actionable dashboard. No accounts, no servers, no distractions. Your data stays in your browser.
 
 ---
-© 2024 Focusflow | All Rights Reserved.
+
+## ✨ Features
+*   **Real Watch Time** — counts only seconds the video is actually playing (pause, tab-switch, and autoplay aware).
+*   **Per-Video & Per-Channel** — see which channels and videos eat your day.
+*   **Dashboard** — Today, Last 7 Days, and Monthly breakdowns at a glance.
+*   **Trend Chart** — daily watch-time bars (7 / 30 days) to spot patterns.
+*   **Insight Cards** — daily average, peak watching hour, longest single session.
+*   **Channel Drill-Down** — click a channel to see every video you watched there.
+*   **Search** — instantly filter channels and videos.
+*   **Export** — one click to CSV or JSON.
+*   **Privacy First** — all data stored locally via `chrome.storage.local`.
+*   **Google Sheets Sync** *(optional)* — batch-archive sessions to your own private spreadsheet.
+
+---
+
+## 🔧 How It Works
+
+TubeTime has four moving parts. The content script measures time, storage holds it, the
+service worker syncs it, and the popup shows it.
+
+```
+                          ┌──────────────────────────────────────────┐
+                          │            YOUTUBE TAB (SPA)             │
+                          │   play / pause / ended / URL change      │
+                          └────────────────────┬─────────────────────┘
+                                               │  events
+                                               ▼
+                          ┌──────────────────────────────────────────┐
+                          │            content.js                    │
+                          │  • detect video id from URL              │
+                          │  • read title + channel + avatar         │
+                          │  • accumulate ONLY while playing         │
+                          │  • flush every 5s + on pause/switch      │
+                          └────────────────────┬─────────────────────┘
+                                               │  write session
+                                               ▼
+                          ┌──────────────────────────────────────────┐
+                          │        chrome.storage.local              │
+                          │   key: session_<date>_<videoId>          │
+                          │   { title, channel, totalSecs, date … }  │
+                          └─────────┬───────────────────────┬────────┘
+                                    │ read                  │ "SESSION_UPDATED"
+                                    ▼                       ▼
+              ┌───────────────────────────────┐   ┌──────────────────────────────┐
+              │      popup.html / popup.js    │   │        background.js         │
+              │  • aggregate by day/channel   │   │  (service worker)            │
+              │  • render dashboard + charts  │   │  • queue pending keys        │
+              │  • search / drill-down        │   │  • alarm every 2 min         │
+              │  • export CSV / JSON          │   │  • FORCE_FLUSH open tabs     │
+              └───────────────────────────────┘   └───────────────┬──────────────┘
+                                                                  │ batch append
+                                                                  ▼
+                                                    ┌──────────────────────────────┐
+                                                    │   Google Sheets API (opt.)   │
+                                                    │   Date │ Channel │ Title │ s  │
+                                                    └──────────────────────────────┘
+```
+
+**Watch-time tracking (per video):**
+
+```
+  URL has ?v=ID ──► onVideoChange() ──► poll for title/channel ──► attach <video> listeners
+                                                                          │
+        play ──► startTracking()  (sessionStart = now)                    │
+       pause ──► pauseTracking()  (accumulatedSecs += now − sessionStart) ◄┘
+   every 5s  ──► flushSession()   ──► storage.local.set(session_<date>_<id>)
+   new video ──► flush old ──► reset state ──► repeat
+```
+
+---
+
+## 🛠️ Installation (Developer Mode)
+
+1.  **Clone or download** this repository.
+2.  Open Chrome → `chrome://extensions/`.
+3.  Enable **Developer mode** (top-right toggle).
+4.  Click **Load unpacked** and select the project folder.
+5.  **Pin** TubeTime for quick access — then watch a video and open the popup.
+
+> Google Sheets sync is optional. Add your OAuth `client_id` in `manifest.json` to enable it.
+
+---
+
+## 👩‍💻 Developed By
+Created by **[Nid](https://www.linkedin.com/in/nidhan-p)** — built out of a desire for a precise, clutter-free way to understand digital consumption habits.
+
+---
+© 2024 TubeTime | All Rights Reserved.
